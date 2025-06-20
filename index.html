@@ -8,27 +8,35 @@
       font-family: 'Nanum Gothic', sans-serif;
       background: #f0f2f5;
       color: #333;
-      margin: 0; padding: 2rem;
+      margin: 0;
+      padding: 2rem;
       text-align: center;
     }
-    a {
+    h1 {
+      margin-bottom: 2rem;
+    }
+    .btn {
       display: inline-block;
-      margin-top: 1.5rem;
-      padding: 0.7rem 1.2rem;
+      margin: 0.8rem;
+      padding: 0.8rem 1.4rem;
       background: #0984e3;
       color: white;
       text-decoration: none;
-      border-radius: 8px;
+      border-radius: 10px;
       font-weight: bold;
       transition: background 0.3s ease;
     }
-    a:hover {
+    .btn:hover {
       background: #74b9ff;
     }
   </style>
 </head>
 <body>
-  <h1>안녕하세요! 민하의 블로그에 오신 것을 환영합니다.</h1>
-  <p><a href="login.html">로그인하러 가기</a></p>
+
+  <h1>민하의 블로그에 오신 것을 환영합니다!</h1>
+
+  <a href="login.html" class="btn">🔐 일반 로그인</a>
+  <a href="admin.html" class="btn">🛠️ 관리자 페이지</a>
+
 </body>
 </html>
