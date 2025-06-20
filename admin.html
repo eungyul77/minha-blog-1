@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>관리자 대시보드</title>
+  <style>
+    body {
+      font-family: 'Nanum Gothic', sans-serif;
+      background: #f8f9fa;
+      padding: 2rem;
+      color: #333;
+    }
+    h1 {
+      color: #2d3436;
+    }
+    .section {
+      background: white;
+      padding: 1rem;
+      margin-bottom: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 0.6rem;
+      border: 1px solid #ccc;
+    }
+    th {
+      background: #dfe6e9;
+    }
+    .btn {
+      padding: 0.3rem 0.6rem;
+      margin: 0 0.2rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-edit {
+      background: #00b894;
+      color: white;
+    }
+    .btn-delete {
+      background: #d63031;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+<h1>관리자 페이지</h1>
+
+<div class="section">
+  <h2>방명록 관리</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>내용</th><th>수정</th><th>삭제</th></tr>
+    </thead>
+    <tbody id="guestbookTable"></tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>회원 목록</h2>
+  <table>
+    <thead>
+      <tr><th>아이디</th><th>닉네임</th><th>권한</th><th>관리</th></tr>
+    </thead>
+    <tbody id="userTable"></tbody>
+  </table>
+</div>
+
+<script>
+  const currentUser = localStorage.getItem('loggedInUser') || sessionStorage.getItem('loggedInUser');
+  const users = JSON.parse(localStorage.getItem('users') || '{}');
+  const guestbook = JSON.parse(localStorage.getItem('guestbook') || '[]');
+
+  if (!currentUser || !users[currentUser]?.isAdmin) {
+    alert('접근 권한이 없습니다.');
+    location.href = "login.html";
+  }
+
+  function renderGuestbook() {
+    const table = document.getElementById("guestbookTable");
+    table.innerHTML = '';
+    guestbook.forEach((entry, index) => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${index + 1}</td>
+        <td><input value="${entry}" onchange="editGuestbook(${index}, this.value)" /></td>
+        <td><button class="btn btn-edit" onclick="editGuestbook(${index}, this.parentElement.parentElement.querySelector('input').value)">저장</button></td>
+        <td><button class="btn btn-delete" onclick="deleteGuestbook(${index})">삭제</button></td>
+      `;
+      table.appendChild(row);
+    });
+  }
+
+  function renderUsers() {
+    const table = document.getElementById("userTable");
+    table.innerHTML = '';
+    for (const id in users) {
+      const user = users[id];
+      table.innerHTML += `
+        <tr>
+          <td>${id}</td>
+          <td>${user.nickname || ''}</td>
+          <td>${user.isAdmin ? '관리자' : '일반'}</td>
+          <td>
+            ${id !== currentUser ? `<button class="btn btn-edit" onclick="toggleAdmin('${id}')">${user.isAdmin ? '해제' : '부여'}</button>` : '-'}
+          </td>
+        </tr>
+      `;
+    }
+  }
+
+  function editGuestbook(index, value) {
+    guestbook[index] = value;
+    localStorage.setItem('guestbook', JSON.stringify(guestbook));
+    renderGuestbook();
+  }
+
+  function deleteGuestbook(index) {
+    if (confirm("정말 삭제하시겠습니까?")) {
+      guestbook.splice(index, 1);
+      localStorage.setItem('guestbook', JSON.stringify(guestbook));
+      renderGuestbook();
+    }
+  }
+
+  function toggleAdmin(id) {
+    users[id].isAdmin = !users[id].isAdmin;
+    localStorage.setItem('users', JSON.stringify(users));
+    renderUsers();
+  }
+
+  renderGuestbook();
+  renderUsers();
+</script>
+
+</body>
+</html>
