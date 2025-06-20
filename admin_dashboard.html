@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>관리자 대시보드</title>
+  <style>
+    body {
+      font-family: 'Nanum Gothic', sans-serif;
+      margin: 0; padding: 0;
+      background: #f4f6f8;
+      color: #333;
+    }
+    header {
+      background: #2d3436;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+    header button {
+      background: #d63031;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    main {
+      max-width: 1100px;
+      margin: 2rem auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h2 {
+      margin-top: 2rem;
+      color: #0984e3;
+      border-bottom: 2px solid #0984e3;
+      padding-bottom: 0.5rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.8rem;
+      text-align: left;
+    }
+    th {
+      background: #dfe6e9;
+    }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 0.4rem;
+      box-sizing: border-box;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button.action {
+      padding: 0.4rem 0.8rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #00b894;
+      color: white;
+      margin-right: 0.3rem;
+    }
+    button.danger {
+      background: #d63031;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>관리자 대시보드</h1>
+  <button onclick="logout()">로그아웃</button>
+</header>
+
+<main>
+  <section>
+    <h2>방명록 관리</h2>
+    <table>
+      <thead>
+        <tr><th>#</th><th>내용</th><th>수정</th><th>삭제</th></tr>
+      </thead>
+      <tbody id="guestbookTable"></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>회원 관리</h2>
+    <table>
+      <thead>
+        <tr><th>아이디</th><th>닉네임</th><th>비밀번호</th><th>권한</th><th>관리자 부여/해제</th><th>추방</th></tr>
+      </thead>
+      <tbody id="userTable"></tbody>
+    </table>
+  </section>
+</main>
+
+<script>
+  const adminId = sessionStorage.getItem('adminLoggedIn');
+  const users = JSON.parse(localStorage.getItem('users') || '{}');
+  const guestbook = JSON.parse(localStorage.getItem('guestbook') || '[]');
+
+  if (!adminId || !users[adminId]?.isAdmin) {
+    alert('관리자 로그인 후 접근 가능합니다.');
+    location.href = 'admin_login.html';
+  }
+
+  function save() {
+    localStorage.setItem('users', JSON.stringify(users));
+    localStorage.setItem('guestbook', JSON.stringify(guestbook));
+  }
+
+  function renderGuestbook() {
+    const tbody = document.getElementById('guestbookTable');
+    tbody.innerHTML = '';
+    guestbook.forEach((entry, index) => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${index + 1}</td>
+        <td><input type="text" value="${entry}" onchange="editGuestbook(${index}, this.value)" /></td>
+        <td><button class="action" onclick="editGuestbook(${index}, this.parentElement.parentElement.querySelector('input').value)">저장</button></td>
+        <td><button class="action danger" onclick="deleteGuestbook(${index})">삭제</button></td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  function renderUsers() {
+    const tbody = document.getElementById('userTable');
+    tbody.innerHTML = '';
+    for (const id in users) {
+      const user = users[id];
+      const row = document.createElement('tr');
+      const role = user.isAdmin ? '관리자' : '일반';
+      row.innerHTML = `
+        <td>${id}</td>
+        <td><input type="text" value="${user.nickname}" onchange="users['${id}'].nickname = this.value; save();" /></td>
+        <td><input type="text" value="${user.pw}" onchange="users['${id}'].pw = this.value; save();" /></td>
+        <td>${role}</td>
+        <td>${id !== adminId ? `<button class="action" onclick="toggleAdmin('${id}')">${user.isAdmin ? '해제' : '부여'}</button>` : '-'}</td>
+        <td>${id !== adminId ? `<button class="action danger" onclick="kick('${id}')">추방</button>` : '-'}</td>
+      `;
+      tbody.appendChild(row);
+    }
+  }
+
+  function editGuestbook(index, value) {
+    guestbook[index] = value;
+    save();
+  }
+
+  function deleteGuestbook(index) {
+    if (confirm('정말 삭제하시겠습니까?')) {
+      guestbook.splice(index, 1);
+      save();
+      renderGuestbook();
+    }
+  }
+
+  function toggleAdmin(id) {
+    users[id].isAdmin = !users[id].isAdmin;
+    save();
+    renderUsers();
+  }
+
+  function kick(id) {
+    if (confirm(`${id} 계정을 삭제하시겠습니까?`)) {
+      delete users[id];
+      save();
+      renderUsers();
+    }
+  }
+
+  function logout() {
+    sessionStorage.removeItem('adminLoggedIn');
+    location.href = 'admin_login.html';
+  }
+
+  renderGuestbook();
+  renderUsers();
+</script>
+
+</body>
+</html>

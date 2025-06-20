@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>회원가입</title>
+<style>
+  body { font-family: 'Nanum Gothic', sans-serif; background: #f0f2f5; display:flex; justify-content:center; align-items:center; height:100vh; margin:0;}
+  .container {background:#fff; padding:2rem; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.15); width:320px; text-align:center;}
+  input {width:100%; padding:0.8rem; margin:0.5rem 0; border:1px solid #ccc; border-radius:8px; font-size:1rem;}
+  button {width:100%; padding:0.8rem; background:#0984e3; color:#fff; border:none; border-radius:8px; font-size:1.1rem; cursor:pointer;}
+  button:hover {background:#065aab;}
+  small {display:block; margin-top:1rem; color:#555;}
+  a {color:#0984e3; text-decoration:none; font-weight:bold;}
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>회원가입</h1>
+    <input type="text" id="signupId" placeholder="아이디" />
+    <input type="text" id="nickname" placeholder="닉네임" />
+    <input type="password" id="signupPw" placeholder="비밀번호" />
+    <input type="password" id="signupPw2" placeholder="비밀번호 확인" />
+    <button onclick="signup()">가입하기</button>
+    <small>이미 계정이 있나요? <a href="login.html">로그인</a></small>
+  </div>
+
+  <script>
+    function signup() {
+      let users = JSON.parse(localStorage.getItem('users') || '{}');
+
+      const id = document.getElementById('signupId').value.trim();
+      const nickname = document.getElementById('nickname').value.trim();
+      const pw = document.getElementById('signupPw').value;
+      const pw2 = document.getElementById('signupPw2').value;
+
+      if (!id || !nickname || !pw || !pw2) {
+        alert('모든 항목을 입력하세요.');
+        return;
+      }
+      if (users[id]) {
+        alert('이미 존재하는 아이디입니다.');
+        return;
+      }
+      if (pw !== pw2) {
+        alert('비밀번호가 일치하지 않습니다.');
+        return;
+      }
+
+      users[id] = {
+        pw: pw,
+        nickname: nickname,
+        isAdmin: false
+      };
+
+      localStorage.setItem('users', JSON.stringify(users));
+      alert('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.');
+      location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>민하의 블로그 - 게시판</title>
+  <style>
+    body { font-family: 'Nanum Gothic', sans-serif; background:#f9f9f9; margin:0; padding:1rem; }
+    header { background:#0984e3; color:#fff; padding:1rem; text-align:center; font-size:1.5rem; position: relative; }
+    header button {
+      position: absolute;
+      right: 1rem;
+      top: 1rem;
+      background: #fff;
+      color: #0984e3;
+      border: none;
+      border-radius: 6px;
+      padding: 0.4rem 0.8rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    main { max-width: 900px; margin: 2rem auto; background:#fff; padding:1rem 2rem; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1); }
+    button { background:#0984e3; color:#fff; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer; }
+    button:hover {background:#065aab;}
+    form { margin-bottom: 2rem; }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 0.5rem; margin: 0.5rem 0 1rem 0;
+      border: 1px solid #ccc; border-radius: 6px;
+      font-size: 1rem; box-sizing: border-box;
+    }
+    textarea { resize: vertical; height: 100px; }
+    label { font-weight: bold; display: block; margin-top: 1rem; }
+    .post { border-bottom: 1px solid #ddd; padding: 1rem 0; }
+    .post:last-child { border-bottom: none; }
+    .post-header { display: flex; justify-content: space-between; align-items: center; }
+    .post-nickname { font-weight: bold; font-size: 1.1rem; }
+    .post-date { font-size: 0.8rem; color: #666; }
+    .post-content { margin: 0.5rem 0 0 0; white-space: pre-wrap; }
+    .post-image {
+      margin-top: 0.5rem;
+      max-width: 300px;
+      max-height: 200px;
+      border-radius: 6px;
+    }
+    .post-buttons button {
+      margin-left: 0.5rem;
+      background: #74b9ff;
+      font-size: 0.85rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 6px;
+    }
+    .post-buttons button.delete {
+      background: #d63031;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    민하의 블로그 - 게시판
+    <button onclick="logout()">로그아웃</button>
+  </header>
+
+  <main>
+    <section>
+      <h2>새 글 작성</h2>
+      <form id="postForm" onsubmit="return submitPost();">
+        <label for="postTitle">제목</label>
+        <input type="text" id="postTitle" required maxlength="50" />
+
+        <label for="postContent">내용</label>
+        <textarea id="postContent" required></textarea>
+
+        <label for="postImage">사진 첨부 (선택)</label>
+        <input type="file" id="postImage" accept="image/*" onchange="previewImage(event)" />
+        <img id="imagePreview" style="display:none; margin-top:10px; max-width:300px; max-height:200px; border-radius:8px;" alt="사진 미리보기" />
+
+        <button type="submit">작성하기</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>게시글 목록</h2>
+      <div id="postsContainer"></div>
+    </section>
+  </main>
+
+  <script>
+    const loggedInUserId = localStorage.getItem('loggedInUser') || sessionStorage.getItem('loggedInUser');
+    if (!loggedInUserId) {
+      alert('로그인 후 이용해주세요.');
+      location.href = 'login.html';
+    }
+
+    let users = JSON.parse(localStorage.getItem('users') || '{}');
+    let posts = JSON.parse(localStorage.getItem('posts') || '[]');
+
+    const imageInput = document.getElementById('postImage');
+    const imagePreview = document.getElementById('imagePreview');
+
+    function previewImage(event) {
+      const file = event.target.files[0];
+      if (!file) {
+        imagePreview.style.display = 'none';
+        imagePreview.src = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = e => {
+        imagePreview.src = e.target.result;
+        imagePreview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function submitPost() {
+      const title = document.getElementById('postTitle').value.trim();
+      const content = document.getElementById('postContent').value.trim();
+
+      if (!title || !content) {
+        alert('제목과 내용을 입력하세요.');
+        return false;
+      }
+
+      let imageData = '';
+      if (imageInput.files.length > 0) {
+        imageData = imagePreview.src;
+      }
+
+      const newPost = {
+        id: Date.now(),
+        authorId: loggedInUserId,
+        nickname: users[loggedInUserId]?.nickname || loggedInUserId,
+        title,
+        content,
+        image: imageData,
+        date: new Date().toLocaleString()
+      };
+
+      posts.unshift(newPost);
+      localStorage.setItem('posts', JSON.stringify(posts));
+
+      document.getElementById('postForm').reset();
+      imagePreview.style.display = 'none';
+      imagePreview.src = '';
+
+      renderPosts();
+      return false;
+    }
+
+    function renderPosts() {
+      const container = document.getElementById('postsContainer');
+      container.innerHTML = '';
+
+      if (posts.length === 0) {
+        container.textContent = '작성된 게시글이 없습니다.';
+        return;
+      }
+
+      posts.forEach(post => {
+        const div = document.createElement('div');
+        div.className = 'post';
+
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'post-header';
+
+        const titleEl = document.createElement('div');
+        titleEl.textContent = post.title;
+        titleEl.style.fontWeight = 'bold';
+        titleEl.style.fontSize = '1.2rem';
+
+        const dateEl = document.createElement('div');
+        dateEl.className = 'post-date';
+        dateEl.textContent = post.date;
+
+        headerDiv.appendChild(titleEl);
+        headerDiv.appendChild(dateEl);
+
+        const nicknameEl = document.createElement('div');
+        nicknameEl.className = 'post-nickname';
+        nicknameEl.textContent = `작성자: ${post.nickname}`;
+
+        const contentEl = document.createElement('div');
+        contentEl.className = 'post-content';
+        contentEl.textContent = post.content;
+
+        div.appendChild(headerDiv);
+        div.appendChild(nicknameEl);
+        div.appendChild(contentEl);
+
+        if (post.image) {
+          const imgEl = document.createElement('img');
+          imgEl.className = 'post-image';
+          imgEl.src = post.image;
+          div.appendChild(imgEl);
+        }
+
+        if (loggedInUserId === post.authorId || users[loggedInUserId]?.isAdmin) {
+          const btnDiv = document.createElement('div');
+          btnDiv.className = 'post-buttons';
+
+          const editBtn = document.createElement('button');
+          editBtn.textContent = '수정';
+          editBtn.onclick = () => editPost(post.id);
+          btnDiv.appendChild(editBtn);
+
+          const deleteBtn = document.createElement('button');
+          deleteBtn.textContent = '삭제';
+          deleteBtn.className = 'delete';
+          deleteBtn.onclick = () => deletePost(post.id);
+          btnDiv.appendChild(deleteBtn);
+
+          div.appendChild(btnDiv);
+        }
+
+        container.appendChild(div);
+      });
+    }
+
+    function editPost(postId) {
+      const post = posts.find(p => p.id === postId);
+      if (!post) return;
+
+      document.getElementById('postTitle').value = post.title;
+      document.getElementById('postContent').value = post.content;
+
+      if (post.image) {
+        imagePreview.src = post.image;
+        imagePreview.style.display = 'block';
+        imageInput.value = '';
+      } else {
+        imagePreview.style.display = 'none';
+        imagePreview.src = '';
+        imageInput.value = '';
+      }
+
+      const formBtn = document.querySelector('#postForm button[type="submit"]');
+      formBtn.textContent = '수정 완료';
+      document.getElementById('postForm').onsubmit = function (e) {
+        e.preventDefault();
+        updatePost(postId);
+        return false;
+      };
+    }
+
+    function updatePost(postId) {
+      const post = posts.find(p => p.id === postId);
+      if (!post) return alert('게시글을 찾을 수 없습니다.');
+
+      const title = document.getElementById('postTitle').value.trim();
+      const content = document.getElementById('postContent').value.trim();
+
+      if (!title || !content) {
+        alert('제목과 내용을 입력하세요.');
+        return;
+      }
+
+      post.title = title;
+      post.content = content;
+
+      if (imageInput.files.length > 0) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          post.image = e.target.result;
+          finishUpdate();
+        };
+        reader.readAsDataURL(imageInput.files[0]);
+      } else {
+        finishUpdate();
+      }
+
+      function finishUpdate() {
+        localStorage.setItem('posts', JSON.stringify(posts));
+        resetForm();
+        renderPosts();
+      }
+    }
+
+    function deletePost(postId) {
+      if (!confirm('정말 삭제하시겠습니까?')) return;
+
+      posts = posts.filter(p => p.id !== postId);
+      localStorage.setItem('posts', JSON.stringify(posts));
+      renderPosts();
+    }
+
+    function resetForm() {
+      document.getElementById('postForm').reset();
+      imagePreview.style.display = 'none';
+      imagePreview.src = '';
+      const formBtn = document.querySelector('#postForm button[type="submit"]');
+      formBtn.textContent = '작성하기';
+      document.getElementById('postForm').onsubmit = function () {
+        return submitPost();
+      };
+    }
+
+    function logout() {
+      localStorage.removeItem('loggedInUser');
+      sessionStorage.removeItem('loggedInUser');
+      location.href = 'login.html';
+    }
+
+    renderPosts();
+  </script>
+</body>
+</html>

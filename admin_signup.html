@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>관리자 회원가입</title>
+  <style>
+    body {
+      font-family: 'Nanum Gothic', sans-serif;
+      display: flex; justify-content: center; align-items: center;
+      height: 100vh; background: #f0f2f5;
+    }
+    .signup-box {
+      background: white; padding: 2rem; border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 320px;
+    }
+    h2 {
+      text-align: center; color: #0984e3; margin-bottom: 1.5rem;
+    }
+    label {
+      display: block; margin-top: 1rem; font-weight: bold;
+    }
+    input {
+      width: 100%; padding: 0.5rem; margin-top: 0.3rem;
+      border-radius: 6px; border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 1.5rem; width: 100%; padding: 0.6rem;
+      background: #0984e3; color: white; border: none;
+      border-radius: 6px; font-weight: bold; cursor: pointer;
+    }
+    button:hover {
+      background: #0652DD;
+    }
+    .error {
+      color: red; margin-top: 1rem; text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="signup-box">
+  <h2>관리자 회원가입</h2>
+  <form id="adminSignupForm">
+    <label for="adminId">아이디</label>
+    <input type="text" id="adminId" required autocomplete="off" />
+
+    <label for="adminPw">비밀번호</label>
+    <input type="password" id="adminPw" required autocomplete="off" />
+
+    <label for="adminNickname">닉네임</label>
+    <input type="text" id="adminNickname" required autocomplete="off" />
+
+    <label for="secretKey">가입 비밀번호</label>
+    <input type="password" id="secretKey" placeholder="관리자용 비밀번호 입력" required autocomplete="off" />
+
+    <button type="submit">가입하기</button>
+    <div id="errorMsg" class="error"></div>
+  </form>
+</div>
+
+<script>
+  const form = document.getElementById('adminSignupForm');
+  const errorMsg = document.getElementById('errorMsg');
+
+  // 관리자 가입용 비밀번호 (너만 알아야 함)
+  const ADMIN_SECRET = 'zmalqpo09!'; // 원하는 비밀번호로 바꿔
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+
+    const id = document.getElementById('adminId').value.trim();
+    const pw = document.getElementById('adminPw').value;
+    const nickname = document.getElementById('adminNickname').value.trim();
+    const secret = document.getElementById('secretKey').value;
+
+    let users = JSON.parse(localStorage.getItem('users') || '{}');
+
+    if (users[id]) {
+      errorMsg.textContent = '이미 존재하는 아이디입니다.';
+      return;
+    }
+
+    if (secret !== ADMIN_SECRET) {
+      errorMsg.textContent = '가입 비밀번호가 올바르지 않습니다.';
+      return;
+    }
+
+    users[id] = { pw, nickname, isAdmin: true };
+    localStorage.setItem('users', JSON.stringify(users));
+    alert('관리자 회원가입 성공! 로그인 페이지로 이동합니다.');
+    location.href = 'admin_login.html';
+  });
+</script>
+
+</body>
+</html>
